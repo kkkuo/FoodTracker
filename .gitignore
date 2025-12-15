@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# 專案特定
+raw_data/
+training_tables/
+wandb/
+checkpoints/
+*.pkl
+*.pth
