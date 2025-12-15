@@ -1,8 +1,8 @@
-# FoodTracker — 基於 CLIP 的營養素回歸
+# FoodTracker — A CLIP based nutrition estimation model
 
-使用 OpenAI CLIP 影像編碼器搭配多頭回歸頭（MLP heads），從單張食物圖片預測四個營養素：卡路里、脂肪、蛋白質、碳水化合物。專案包含資料前處理、訓練、評估與單張推論。
+本專案使用 OpenAI CLIP 的vision encoder搭配MLP heads，從單張食物圖片預測四個營養素：卡路里、脂肪、蛋白質、碳水化合物。專案包含資料前處理、訓練、評估與單張推論。
 
-- 模型實作：`src/model.py`（類別 `NutritionEstimator`）
+- 模型實作：`src/model.py`
 - 訓練腳本：`src/train.py`
 - 評估腳本：`src/evaluate.py`
 - 單張推論：`src/predict.py`
@@ -76,7 +76,7 @@ img_0002.jpg,310,15,20,25
 
 ## 設定檔（config.py）
 
-請在 `src/config.py` 中確認或調整以下常見項目（實際名稱以檔內為準）：
+請在 `src/config.py` 中確認或調整以下常見項目：
 
 - 路徑相關：
   - `CSV_DIR`：標註 CSV 根目錄（例如 `training_tables/`）
@@ -99,9 +99,8 @@ python src/train.py
 
 - `dataset.create_dataloaders` 會以訓練集擬合 `StandardScaler` 標準化四個回歸目標，並存成 `SCALER_PATH`。
 - 模型使用 CLIP 視覺編碼器 + 4 個回歸 head 對應（卡、脂、蛋、碳）。
-- 損失為 MSE；訓練階段（在 `train.py`）可能對脂肪/蛋白/碳水加以權重（例如 ×2）。
 - 使用 `ReduceLROnPlateau` 與早停，並在驗證 loss 下降時儲存最佳權重到 `MODEL_SAVE_PATH`。
-- 訓練與驗證指標會記錄到 W&B（如已啟用）。
+- 訓練與驗證指標會記錄到 W&B。
 
 輸出：
 
@@ -114,7 +113,7 @@ python src/train.py
 python src/evaluate.py
 ```
 
-- 載入測試集、最佳模型與標準化器，回推預測到實際單位，輸出整體與（若有）各類別指標（例如 RMSE）。
+- 載入測試集、最佳模型與標準化器，回推預測到實際單位，輸出整體與各類別預測結果之RMSE。
 
 ## 單張推論
 
@@ -139,19 +138,3 @@ python src/predict.py path/to/your_image.jpg
 - 資料集與轉換（`src/dataset.py`）
   - `FoodDataset` 讀取影像、套用 transforms，並回傳標準化後的四維目標。
   - `get_transforms()`：訓練含資料增強、驗證/測試走 deterministic pipeline；Normalize 可依需求調整。
-
-## 實務建議與注意事項
-
-- 影像 Normalize：若 backbone 使用 CLIP，建議 Normalize 採用 CLIP 官方 mean/std（而非 ImageNet）。可在 `get_transforms()` 調整。
-- 損失權重一致性：若訓練對脂肪/蛋白/碳水加權，建議驗證階段也一致，避免早停判準與最佳模型選擇偏差。
-- 效能調校：可在 `config.py` 暴露 `num_workers`、`pin_memory` 等 DataLoader 參數，並視硬體調整。
-- 顯存不足：適度降低 `BATCH_SIZE` 或改用較小的 CLIP 視覺模型。
-- W&B：若無需雲端記錄，可以 `WANDB_MODE=disabled` 停用，或在程式內以條件包裝。
-
-## 相依套件
-
-完整依賴請見 `requirements.txt`（包含 `torch`、`wandb`、以及 CLIP 相依）。
-
-## 授權
-
-依專案需求補充授權條款（如 MIT、Apache-2.0 等）。
